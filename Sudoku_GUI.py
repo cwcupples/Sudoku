@@ -1,6 +1,7 @@
-"""This is the Sudoku version that builds off of the text one. It creates a GUI for users.
+"""This is the Sudoku version that builds off of the text one. It creates a GUI, instead of just text based.
     This is the second version. It has 5 lives, and a screen that lets you know if you won at the end.
-    I couldn't get the solve_game() function to work on my Mac so maybe it'll work on a diff computer.
+    User gets to choose between 3 different difficulties. User can change selected cube using arrow keys too.
+    I couldn't get the solve_game() function to work corredtly and it was very slow. Not sure why
     I think the problem is the pygame.display.update()"""
 import pygame
 from Sudoku.Sudoku_solver import solve, valid, solvable, find_empty
@@ -89,10 +90,15 @@ class Board:
 
     def select(self, row, col):
         """Highlight a box"""
-        if self.selected is not None:
-            self.cubes[self.selected[0]][self.selected[1]].selected = False
-        self.selected = row, col
-        self.cubes[self.selected[0]][self.selected[1]].selected = True
+        if -1 < row < 9 and -1 < col < 9:
+            if self.selected is not None:
+                self.cubes[self.selected[0]][self.selected[1]].selected = False
+            self.selected = row, col
+            self.cubes[self.selected[0]][self.selected[1]].selected = True
+
+    def move_arrow(self, x, y):
+        row, col = self.selected
+        self.select(row + y, col + x)
 
     def solve_game(self):
         """Press space bar to solve the board ya cheater"""
@@ -203,7 +209,7 @@ class Cube:
             pygame.draw.rect(screen, RED, (x, y, BOX + 1, BOX + 1), THIN)
 
 
-def welcome(font):
+def welcome(font, mode=None):
     WIN.fill(BLACK)
     text = ["Easy", "Medium", "Hard"]
     for i in range(len(text)):
@@ -212,6 +218,22 @@ def welcome(font):
         word_rect.center = (SCREEN_X // 3 * i + SCREEN_X // 6, SCREEN_Y // 2)
         WIN.blit(word, word_rect)
     pygame.display.update()
+    while not mode:
+        for event in pygame.event.get():  # User did something
+            # get row and column of the piece to move
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
+                x1 = SCREEN_X // 3
+                x2 = 2 * x1
+                if pos[0] < x1:
+                    mode = easy
+                elif pos[0] < x2:
+                    mode = medium
+                else:
+                    mode = hard
+            if event.type == pygame.QUIT:  # If user clicked close
+                quit()
+    return mode
 
 
 """" 
@@ -269,23 +291,7 @@ hard = [
 # this is the overall function that will run the code
 def main():
     font = pygame.font.Font('freesansbold.ttf', 30)
-    welcome(font)
-    mode = None
-    while not mode:
-        for event in pygame.event.get():  # User did something
-            # get row and column of the piece to move
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = pygame.mouse.get_pos()
-                x1 = SCREEN_X // 3
-                x2 = 2 * x1
-                if pos[0] < x1:
-                    mode = easy
-                elif pos[0] < x2:
-                    mode = medium
-                else:
-                    mode = hard
-            if event.type == pygame.QUIT:  # If user clicked close
-                quit()
+    mode = welcome(font)
     run = True
     space = False
     lost = False
@@ -318,6 +324,14 @@ def main():
                     key = 9
                 else:
                     key = 0
+                if event.key == pygame.K_UP:
+                    game.move_arrow(0, -1)
+                if event.key == pygame.K_DOWN:
+                    game.move_arrow(0, 1)
+                if event.key == pygame.K_LEFT:
+                    game.move_arrow(-1, 0)
+                if event.key == pygame.K_RIGHT:
+                    game.move_arrow(1, 0)
                 # here we actually set the temp value
                 if key != 0:
                     game.temp(key)
